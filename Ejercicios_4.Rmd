@@ -1,0 +1,279 @@
+---
+title: "Exercisis 4. Regresión lineal simple y múltiple "
+author: "Magí Bas"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+## Ejercicios del libro de Carmona
+
+1.  **(Ejercicio 6.8 del Capítulo 6 página 118)**
+
+    **Hallar la recta de regresión simple de la variable respuesta raíz cuadrada de la velocidad sobre la variable regresora densidad con los datos de la tabla 1.1 del capítulo 1.**
+
+**Comprobar las propiedades del ejercicio 6.4 sobre las predicciones ŷi = β̂0 + β̂1 xi y los residuos ei = yi − ŷi para estos datos.**
+
+```{r}
+library(readxl)
+tabla1.1 = read_excel(file.choose())
+```
+
+```{r}
+library(dplyr)
+
+tabla1.1 <- tabla1.1 %>%
+  mutate(Densidad = as.numeric(sub(",", ".", Densidad)),
+         Velocidad = as.numeric(sub(",", ".", Velocidad)))
+
+tabla1.1$sqrt_velocidad = sqrt(tabla1.1$Velocidad)
+
+recta= lm(sqrt_velocidad ~ Densidad, data = tabla1.1)
+summary(recta)
+```
+
+```{r}
+plot(tabla1.1$Densidad, tabla1.1$sqrt_velocidad, main = "Recta de regresión", xlab = "Densidad", ylab = "sqrt_velocidad")
+abline(recta)
+```
+
+```{r}
+coef(recta)
+```
+
+sqrt_velocidad = 8.09 - 0.0566\*Densidad
+
+```{r}
+sum(residuals(recta))
+```
+
+Practicamente zero
+
+$$ \sum y_i = \sum \hat{y}_i $$
+
+Para comprobar si la suma de los valores ajustados ŷi es igual a la suma de los valores observados yi, podemos calcular:
+
+```{r}
+all.equal(sum(tabla1.1$sqrt_velocidad), sum(predict(recta)), tolerance = 1e-10)
+```
+
+$$\sum x_i e_i = 0$$
+
+Esta propiedad es importante en la interpretación de la regresión lineal ya que indica que el ajuste de la recta es adecuado para el conjunto de datos y que no hay una tendencia sistemática en los residuos.
+
+```{r}
+round(sum(residuals(recta)*tabla1.1$Densidad),2)
+```
+
+$$
+\sum \hat{y}_i e_i=0
+$$
+
+Esta propiedad es útil para verificar que el modelo ajustado explica adecuadamente la relación entre la variable respuesta y la variable explicativa. Si se cumple la propiedad, esto sugiere que el modelo es adecuado para describir la relación entre las variables.
+
+```{r}
+round(sum(residuals(recta)*predict(recta)),2)
+```
+
+**Calcular la estimación de σ 2 y, a partir de ella, las estimaciones de las desviaciones estándar de los estimadores de los parámetros β̂0 y β̂1**
+
+```{r}
+# σ^2 = SSE / (n-2)
+n = nrow(tabla1.1)
+SSE = sum(residuals(recta)^2)
+sigma=SSE/(n-2)
+print(sigma)
+```
+
+```{r}
+# Estimaciones de las desviaciones estándar
+m_densidad = mean(tabla1.1$Densidad)
+xi_minus = sum((tabla1.1$Densidad - m_densidad)^2)
+SE_beta0= sqrt(sigma * (1/n + m_densidad^2 / xi_minus))
+SE_beta1 = sqrt(sigma / xi_minus)
+
+cat("Estimación de la desviación estándar de beta0:", round(SE_beta0, 4), "\n")
+cat("Estimación de la desviación estándar de beta1:", round(SE_beta1, 4), "\n")
+```
+
+Los estimadores son valores numéricos obtenidos a partir de los datos muestrales, que se utilizan para aproximar los valores de los parámetros poblacionales desconocidos. En el caso del modelo de regresión lineal simple, los estimadores son la pendiente y el intercepto de la recta de regresión, denotados como β̂1 y β̂0, respectivamente.
+
+El intercepto β̂0 representa el valor de la variable dependiente (y) cuando la variable independiente (x) es igual a cero. En el contexto del ejemplo que estás trabajando, sería el valor de la raíz cuadrada de la velocidad (y) cuando la densidad (x) es igual a cero, aunque este valor no tendría un significado físico real en el problema.
+
+La pendiente β̂1 representa el cambio promedio en la variable dependiente (y) por cada unidad de cambio en la variable independiente (x). En el ejemplo que estás trabajando, representa cuánto cambia la raíz cuadrada de la velocidad en promedio por cada unidad de cambio en la densidad.
+
+Los estimadores de la desviación estándar de β̂0 y β̂1 representan la variabilidad de los estimadores β̂0 y β̂1, respectivamente. En otras palabras, nos indican cuánto pueden variar los valores de β̂0 y β̂1 si se obtuvieran nuevas muestras aleatorias de la población.
+
+**Escribir los intervalos de confianza para los parámetros con un nivel de confianza del 95 %**
+
+```{r}
+# Calcular intervalo de confianza al 95% para beta0 y beta1
+confint(recta, level = 0.95)
+```
+
+Los intervalos de confianza para los parámetros con un nivel de confianza del 95% son:
+
+-   Para el parámetro \$\\beta_0\$ (intercepto): [7.8189, 8.3607]
+
+-   Para el parámetro \$\\beta_1\$ (pendiente): [-0.0611, -0.0521]
+
+Los porcentajes 2.5% y 97.5% corresponden a los límites inferior y superior, respectivamente, del intervalo de confianza del 95%. Es decir, hay un 95% de probabilidad de que el verdadero valor del parámetro esté dentro del intervalo calculado. Por lo tanto, el intervalo de confianza nos da una idea de la precisión con la que hemos estimado el parámetro.
+
+Los porcentajes que aparecen en los intervalos de confianza no corresponden al nivel de confianza directamente, sino a los valores críticos de la distribución t de Student. En el caso del nivel de confianza del 95%, se utilizan los valores críticos t0.025 y t0.975 que corresponden a los percentiles 2.5% y 97.5% respectivamente de la distribución t de Student con n-2 grados de libertad. Por esta razón, los intervalos de confianza se expresan en términos de estos percentiles.
+
+**Construir la tabla para la significación de la regresión y realizar dicho contraste**
+
+Para realizar el contraste de significación de la regresión, primero se debe calcular el estadístico de prueba F y su correspondiente valor p. La tabla de análisis de varianza (ANOVA) permite obtener ambos valores
+
+```{r}
+anova(recta)
+```
+
+La tabla de análisis de varianza (ANOVA) nos permite realizar el contraste de hipótesis para determinar si la regresión es significativa o no. En ella, se descompone la variabilidad total de la variable respuesta en dos partes: la variabilidad explicada por el modelo de regresión y la variabilidad que queda sin explicar por el modelo.
+
+La tabla ANOVA muestra los grados de libertad (df) y las sumas de cuadrados (Sum Sq) de ambos componentes, así como la suma de cuadrados total (que es la suma de cuadrados de la regresión más la suma de cuadrados del error), los cuadrados medios (Mean Sq) y el valor F y p-value correspondiente del modelo.
+
+En este caso, la variable explicativa Densidad es altamente significativa (p-value \< 2.2e-16), lo que indica que la regresión es significativa y que la Densidad es un buen predictor de la variable respuesta sqrt_velocidad. Por otro lado, la variabilidad no explicada por el modelo (Residuals) es relativamente baja, lo que indica que el modelo es adecuado para explicar la variabilidad de la variable respuesta.
+
+**Hallar el intervalo de la predicción de la respuesta media cuando la densidad es de 50 vehículos por km. Nivel de confianza: 90 %**
+
+```{r}
+# Predicción de la velocidad media
+prediccion = predict(recta, data.frame(Densidad = 50), interval = "prediction", level = 0.9)
+
+# Mostrar intervalo de predicción
+cat("Intervalo de predicción de la velocidad media (nivel de confianza 90%):\n")
+cat("[",(round(prediccion[2],2))^2, ",", round(prediccion[1],2)^2,'] velocidad media')
+```
+
+**2. (∗) (Ejercicio 6.9 del Capítulo 6 página 118) Comparar las rectas de regresión de hombres y mujeres con los logaritmos de los datos del ejercicio 1.4**
+
+```{r}
+
+```
+
+**3. (Ejercicio 6.10 del Capítulo 6 página 118) Se admite que una persona es proporcionada si su altura en cm es igual a su peso en kg más 100. En términos estadísticos si la recta de regresión de Y (altura) sobre X (peso) es: Y = 100 + X**
+
+**Contrastar, con un nivel de significación α = 0.05, si se puede considerar válida esta hipótesis a partir de los siguientes datos que corresponden a una muestra de mujeres jóvenes:**
+
+```{r}
+data3=data.frame(X=c(55, 52, 65, 54, 46, 60, 54, 52, 56, 65, 52, 53, 60),
+                 Y=c(164, 164, 173, 163, 157, 168, 171, 158, 169, 172, 168, 160, 172))
+cor(data3)
+```
+
+```{r}
+hipotesi=lm(Y~X, data=data3)
+summary(hipotesi)
+```
+
+La hipótesis nula es que la pendiente de la recta es igual a 1, es decir, que altura = peso + 100. La hipótesis alternativa es que la pendiente de la recta es diferente a 1, es decir, que altura != peso + 100. El nivel de significación es α = 0.05.
+
+```{r}
+# Definir la hipótesis nula y el nivel de significación
+H0 <- "Y = 100 + X"
+alpha <- 0.05
+
+# Obtener los coeficientes de la recta de regresión
+coeficientes <- coef(hipotesi)
+
+# Obtener el error estándar de la estimación
+error_estandar <- summary(hipotesi)$sigma
+
+# Calcular el estadístico de contraste
+t <- (coeficientes[2] - 1)/error_estandar
+
+# Obtener el p-valor del contraste
+p_valor <- 2 * pt(-abs(t), df = length(data3$X) - 2)
+
+# Realizar el contraste de hipótesis
+if (p_valor < alpha) {
+  cat("Rechazamos la hipótesis nula:", H0, "\n")
+} else {
+  cat("No rechazamos la hipótesis nula:", H0, "\n")
+}
+cat("El valor del estadístico de contraste es:", round(t, 3), "\n")
+cat("El p-valor es:", p_valor)
+
+```
+
+**4. (Ejercicio 6.11 del Capítulo 6 página 119) El período de oscilación de un péndulo es** $$2π \sqrt(l/g)$$ **, donde l es la longitud y g es la constante de gravitación. En un experimento observamos tij (j = 1, . . . , ni ) períodos correspondientes a li (i =1, . . . , k) longitudes.**
+
+(a) Proponer un modelo, con las hipótesis que se necesiten, para estimar la constante $$2 \pi / \sqrt(g)$$ por el método de los mínimos cuadrados
+
+(b) Contrastar la hipótesis H0: $2 \pi/ \sqrt g = 2$
+
+```{r}
+data4=data.frame(longitud = c(18.3, 18.3,18.3,18.3, 20, 20, 21.5,21.5,21.5, 15, 15),
+                 periodo = c(8.58, 7.9, 8.2, 7.8, 8.4, 9.2, 9.7, 8.95, 9.2, 7.5, 8))
+model <- lm(periodo ~ sqrt(longitud), data = data4)
+summary(model)
+```
+
+Con el modelo ajustado por mínimos cuadrados se obtuvo una estimación para el coeficiente de la raíz cuadrada de la longitud de \$2.0932\$ con un error estándar de \$0.4772\$. El valor de \$t\$ asociado al coeficiente es de \$4.387\$ con un valor \$p\$ de \$0.00175\$, lo que indica que es estadísticamente significativo al nivel de significancia del \$0.05\$.
+
+Por lo tanto, se rechaza la hipótesis nula \$H_0: 2\\pi/\\sqrt{g}=2\$ y se concluye que la constante de gravitación \$g\$ es distinta de \$9.81\$ m/s\^2.
+
+```{r}
+# H0: 2pi/sqrt(g) = 2
+# H1: 2pi/sqrt(g) != 2
+
+# Estimación puntual del parámetro
+b <- coef(model)["sqrt(longitud)"]
+
+# Error estándar de la estimación puntual
+SE_b <- summary(model)$coefficients[2,2]
+
+# Valor teórico del parámetro
+mu <- 2
+
+# Estadístico de contraste
+t <- (b - mu) / SE_b
+
+# Valor p bilateral
+p_valor <- 2 * pt(-abs(t), df = model$df.residual)
+
+# Nivel de significación alfa
+alfa <- 0.05
+
+# Región de rechazo
+region_rechazo <- qt(alfa/2, df = model$df.residual, lower.tail = FALSE)
+
+# Intervalo de confianza al nivel 1-alfa
+intervalo <- confint(model, "sqrt(longitud)", level = 1-alfa)
+
+# Resultados
+cat("Estimación puntual del parámetro: b =", round(b,4), "\n")
+cat("Error estándar de la estimación puntual: SE_b =", round(SE_b,4), "\n")
+cat("Valor teórico del parámetro: mu =", mu, "\n")
+cat("Estadístico de contraste: t =", round(t,4), "\n")
+cat("Valor p bilateral: p_valor =", format(p_valor, scientific = FALSE), "\n")
+cat(paste0("Región de rechazo al nivel alfa=", alfa, ": t <", round(-region_rechazo,4), " o t >", round(region_rechazo,4), "\n"))
+cat(paste0("Intervalo de confianza al nivel ", 1-alfa, ": [", round(intervalo["sqrt(longitud)",1],4), ", ", round(intervalo["sqrt(longitud)",2],4), "]"))
+
+```
+
+El valor del estadístico de contraste es de 0.1954 y el valor p bilateral es de 0.8494. Como el valor p es mayor que el nivel de significación alfa de 0.05, no se rechaza la hipótesis nula. Por lo tanto, se concluye que no hay suficiente evidencia estadística para afirmar que el valor teórico del parámetro es diferente de 2.
+
+Además, se puede afirmar con un nivel de confianza del 95% que el valor real del parámetro se encuentra en el intervalo de confianza [1.0138, 3.1727].
+
+**5. (Ejercicio 8.4 del Capítulo 8 página 157) Se dispone de los siguientes datos sobre diez empresas fabricantes de productos de limpieza doméstica:**
+
+```{r}
+Empresa <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+V <- c(60, 48, 42, 36, 78, 36, 72, 42, 54, 90)
+IP <- c(100, 110, 130, 100, 80, 80, 90, 120, 120, 90)
+PU <- c(1.8, 2.4, 3.6, 0.6, 1.8, 0.6, 3.6, 1.2, 2.4, 4.2)
+
+df <- data.frame(Empresa, V, IP, PU)
+
+```
+
+**En el cuadro anterior, V son las ventas anuales, expresadas en millones de euros, IP es un índice de precios relativos (Precios de la empresa/Precios de la competencia) y PU son los gastos anuales realizados en publicidad y campañas de promoción y difusión, expresados también en millones de euros.**
+
+**Tomando como base la anterior información:**
+
+**1) Estimar el vector de coeficientes β = (β0 , β1 , β2 )0 del modelo Vi = β0 + β1 IPi + β2 PUi + i**
+
+**2) Estimar la matriz de varianzas-covarianzas del vector β.**
+
+**3) Calcular el coeficiente de determinación.**
