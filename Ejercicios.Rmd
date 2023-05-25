@@ -1,0 +1,265 @@
+---
+title: "Exercisis 3. Inferencia"
+author: "Magí Bas"
+date: "`r Sys.Date()`"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Faraway
+
+1.  (Ejercicio 1 cap. 3 pág. 48) For the prostate data, fit a model with
+    lpsa as the response and the other variables as predictors:
+
+    \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+    **Description** The prostate data frame has 97 rows and 9 columns. A
+    study on 97 men with prostate cancer who were due to receive a
+    radical prostatectomy.
+
+    **Format** This data frame contains the following columns:
+
+    -   lcavol log(cancer volume)
+
+    -   lweight log(prostate weight)
+
+    -   age age
+
+    -   lbph log(benign prostatic hyperplasia amount)
+
+    -   svi seminal vesicle invasion
+
+    -   lcp log(capsular penetration)
+
+    -   gleason Gleason score
+
+    -   pgg45 percentage Gleason scores 4 or 5
+
+    -   lpsa log(prostate specific antigen)
+
+    \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+```{r}
+library(faraway)
+library(tidyverse)
+#library(tidyverse)
+data(prostate)
+
+m=lm(lpsa~., data=prostate)
+summary(m)
+
+```
+
+(a) **Compute 90 and 95% CIs for the parameter associated with age.
+    Using just these intervals, what could we have deduced about the
+    p-value for age in the regression summary?**
+
+```{r}
+#Intervalos de confianza
+confint(m, c("age"), .95)
+confint(m, c("age"), .90)
+```
+
+Con base en los intervalos de confianza 'age' está en el límite para ser
+considerado significativo. Debido a que el IC del 90 % no incluye el 0,
+la variabe "age" es significativa en ese nivel, pero el límite superior
+del IC del 95 %, que es más estricto, se extiende justo por encima de
+cero hasta 0,0025.
+
+En resumen de regresión lo confirma al devolver un valor p de 0,08,
+cercano pero superior al umbral común de 0,05 para la significación.
+
+**b. Compute and display a 95% joint confidence region for the
+parameters associated with age and lbph. Plot the origin on this
+display. The location of the origin on the display tells us the outcome
+of a certain hypothesis test. State that test and its outcome**
+
+```{r prostate_b}
+library(ellipse)
+plot(ellipse(m, c('age', 'lbph')), type = "l")
+points(0, 0, pch = 1)
+abline(v= confint(m)['age',], lty = 2)
+abline(h= confint(m)['lbph',], lty = 2)
+```
+
+La hipótesis nula conjunta \`age = lbph = 0\` no se puede rechazar
+porque el origen se encuentra dentro de la elipse de la región de
+confianza. De manera similar, la hipótesis nula \`age = 0\` no se puede
+rechazar porque 0 se encuentra dentro de los límites de confianza del
+95% y lo mismo es cierto para la hipótesis nula \`lbph = 0\`.
+
+**(c) In the text, we made a permutation test corresponding to the F
+-test for the significance of all the predictors. Execute the
+permutation test corresponding to the t-test for age in this model.
+(Hint: summary(g)\$coef[4,3] gets you the t-statistic you need if the
+model is called g.)**
+
+```{r}
+library(magrittr)
+library(purrr)
+library(mlbench)
+t_value = summary(m) %>% coef() %>% .['age', 't value']
+
+#funcion para permutar n-veces
+permute_tmod = function(nsims) {
+  map_dbl(1:nsims,
+          ~ lm(sample(lpsa) ~., data=prostate) %>%
+            summary() %>%
+            coef() %>%
+            .['age', 't value'])
+}
+
+mean(abs(permute_tmod(100)) > abs(t_value))
+mean(abs(permute_tmod(1000)) > abs(t_value))
+mean(abs(permute_tmod(10000)) > abs(t_value))
+```
+
+De la sección a anterior, no sabemos que el valor p para \`edad\` es
+0.08229, y podemos ver que el valor de retorno de la permutación se
+acerca a ese número a medida que aumenta el número de simulaciones.
+
+**(d) Remove all the predictors that are not significant at the 5%
+level. Test this model against the original model. Which model is
+preferred?**
+
+```{r}
+m2 <- update(m, . ~ lcavol + lweight + svi)
+anova(m, m2)
+```
+
+El modelo reducido no es significativamente mejor que el modelo
+completo, por lo que elegiríamos \`m\` sobre \`m2\`.
+
+**2. (Ejercicio 2 cap. 3 pág. 49) Thirty samples of cheddar cheese were
+analyzed for their content of acetic acid, hydrogen sulfide and lactic
+acid. Each sample was tasted and scored by a panel of judges and the
+average taste score produced. Use the cheddar data to answer the
+following:**
+
+```{r}
+data(cheddar)
+str(cheddar)
+```
+
+**(a) Fit a regression model with taste as the response and the three
+chemical contents as predictors. Identify the predictors that are
+statistically significant at the 5% level.**
+
+```{r}
+cheddar_model=lm(taste~., data=cheddar)
+summary(cheddar_model)
+```
+
+The predictors that are satististically significant are: hydrogen
+sulfide and lactic acid
+
+(b) Acetic and H2S are measured on a log scale. Fit a linear model where
+    all three predictors are measured on their original scale. Identify
+    the predictors that are statistically significant at the 5% level
+    for this model.
+
+```{r}
+delog_cheddar_model=update(cheddar_model, . ~exp(Acetic)+exp(H2S)+Lactic)
+summary(delog_cheddar_model)
+```
+
+Now, only Lactic is statistically significant a 5%
+
+**(c) Can we use an F -test to compare these two models? Explain. Which
+model provides a better fit to the data? Explain your reasoning.**
+
+```{r}
+# F-test are used to acess variation (expected/un-expected) in a model
+anova(cheddar_model, delog_cheddar_model)
+```
+
+There is less residual variance in the log model (m), but we don't have
+any degrees of freedom left so we can't estimate the F-statistic
+
+**(d) If H2S is increased 0.01 for the model used in (a), what change in
+the taste would be expected?**
+
+```{r}
+(coef(cheddar_model)[3]*.01)
+```
+
+0.039 increase in taste
+
+**(e) What is the percentage change in H2S on the original scale
+corresponding to an additive increase of 0.01 on the (natural) log
+scale?**
+
+```{r}
+test_df = data.frame(Acetic = rep(mean(cheddar$Acetic), 2),
+                     H2S=mean(cheddar$H2S)+c(0,.01),
+                     Lactic = mean(cheddar$Lactic))
+predict(cheddar_model, test_df)
+```
+
+confirmed
+
+```{r}
+(coef(cheddar_model)[3] + 0.01)/coef(delog_cheddar_model)[3]
+```
+
+5114% increase to match
+
+```{r}
+exp(.01)
+```
+
+1 point increse in the unlogged scale
+
+**3. (Ejercicio 3 cap. 3 pág. 49) Using the teengamb data, fit a model
+with gamble as the response and the other variables as predictors.**
+
+```{r}
+library(skimr)
+?teengamb
+skim(teengamb)
+```
+
+**(a) Which variables are statistically significant at the 5% level?**
+
+```{r}
+teengamb_model=lm(gamble ~., data=teengamb)
+summary(teengamb_model)
+```
+
+Sex and income significant at 5% level
+
+**(b) What interpretation should be given to the coefficient for sex?**
+
+Since th coefficient shows a -22.11 shift in gamble for an increase of 1
+in sex and females are code as 1, women gamble less than men
+
+**(c) Fit a model with just income as a predictor and use an F -test to
+compare it to the full model.**
+
+```{r}
+# if you recode sex as a factor with the levels as c(female, male)
+teengamb$sex %<>% fct_rev()
+# and refit
+summary(teengamb_model ~ ., data=teengamb)
+```
+
+```{r}
+summary(teengamb_model)
+```
+
+```{r}
+teengamb_model2= lm(gamble ~ income, data=teengamb)
+summary(teengamb_model2)
+```
+
+```{r}
+# order of anova doesn't matter
+#larger model is significanly better
+anova(teengamb_model, teengamb_model2)
+```
