@@ -1,0 +1,124 @@
+# Ejercicios del libro de Faraway
+
+1.  (Ejercicio 1 cap. 2 pág. 30) The dataset teengamb concerns a study of teenage gambling in Britain. Fit a regression model with the expenditure on gambling as the response and the sex, status, income and verbal score as predictors. Present the output.
+
+```{r}
+library(faraway)
+data(teengamb)
+names(teengamb)
+```
+
+(a) **What percentage of variation in the response is explained by these predictors?**
+
+```{r}
+model_1=lm(gamble~sex+status+income+verbal, data=teengamb)
+coef(model_1)
+
+```
+
+Segons les estimacions minímes quadratiqueso valors R-quadrat ajustats podem determinar que les proporcions de la variança explicades per a cadascuna de les variables son: Sex -22% Status: 0.05% Income: 4.96% Verbal: -2.95%
+
+```{r}
+sumary(model_1)
+```
+
+Ens demanen el valor R²
+
+```{r}
+model_1sum = summary(model_1)
+model_1sum$r.squared*100
+```
+
+(b) **Which observation has the largest (positive) residual? Give the case number.**
+
+```{r}
+res_1=residuals(model_1)
+max(res_1)
+```
+
+Número de cas amb el major residu:
+
+```{r}
+which.max(res_1)
+```
+
+(c) **Compute the mean and median of the residuals.**
+
+```{r}
+#
+mean(res_1)
+```
+
+```{r}
+#!!!
+median(res_1)
+```
+
+(d) **Compute the correlation of the residuals with the fitted values.**
+
+```{r}
+ajustats_1=fitted(model_1)
+cor_res_aju=cor(residus_1, ajustats_1)
+print(cor_res_aju)
+```
+
+(e) **Compute the correlation of the residuals with the income.**
+
+```{r}
+cor_res_income=cor(residus_1, teengamb$income)
+print(cor_res_income)
+```
+
+(f) **For all other predictors held constant, what would be the difference in predicted expenditure on gambling for a male compared to a female?**
+
+```{r}
+
+```
+
+**2. (Ejercicio 2 cap. 2 pág. 30) The dataset uswages is drawn as a sample from the Current Population Survey in 1988. Fit a model with weekly wages as the response and years of education and experience as predictors. Report and give a simple interpretation to the regression coefficient for years of education. Now fit the same model but with logged weekly wages. Give an interpretation to the regression coefficient for years of education. Which interpretation is more natural?**
+
+```{r}
+data(uswages)
+
+
+```
+
+3.  (∗) (Ejercicio 3 cap. 2 pág. 30) In this question, we investigate the relative merits of methods for computing the coefficients. Gen- erate some artificial data by: \> x \<- 1:20 \> y \<- x+rnorm(20) Fit a polynomial in x for predicting y. Compute β̂ in two ways --- by lm() and by using the direct cal- culation described in the chapter. At what degree of polynomial does the direct calculation method fail? (Note the need for the I() function in fitting the polynomial, that is, lm(y \~ x + I(x\^2)).
+
+4.  (Ejercicio 4 cap. 2 pág. 30) The dataset prostate comes from a study on 97 men with prostate cancer who were due to receive a radical prostatectomy. Fit a model with lpsa as the response and lcavol as the predictor. Record the residual standard error and the R2 . Now add lweight, svi, lbph, age, lcp, pgg45 and gleason to the model one at a time. For each model record the residual standard error and the R2 . Plot the trends in these two statistics.
+
+5.  (Ejercicio 5 cap. 2 pág. 30) Using the prostate data, plot lpsa against lcavol. Fit the regressions of lpsa on lcavol and lcavol on lpsa. Display both regression lines on the plot. At what point do the two lines intersect?
+
+6.  (Ejercicio 6 cap. 2 pág. 30) Thirty samples of cheddar cheese were analyzed for their content of acetic acid, hydrogen sulfide and lactic acid. Each sample was tasted and scored by a panel of judges and the average taste score produced. Use the cheddar data to answer the following:
+
+<!-- -->
+
+(a) Fit a regression model with taste as the response and the three chemical contents as predictors. Report the values of the regression coefficients.
+(b) Compute the correlation between the fitted values and the response. Square it. Identify where this value appears in the regression output.
+(c) Fit the same regression model but without an intercept term. What is the value of R2 reported in the output? Compute a more reasonable measure of the good- ness of fit for this example.
+(d) Compute the regression coefficients from the original fit using the QR decomposition showing your R code.
+
+<!-- -->
+
+7.  (Ejercicio 7 cap. 2 pág. 31) An experiment was conducted to determine the effect of four factors on the resistivity of a semi- conductor wafer. The data is found in wafer where each of the four factors is coded as − or + depending on whether the low or the high setting for that factor was used. Fit the linear model resist \~ x1 + x2 + x3 + x4.
+
+<!-- -->
+
+(a) Extract the X matrix using the model.matrix function. Examine this to determine how the low and high levels have been coded in the model.
+(b) Compute the correlation in the X matrix. Why are there some missing values in the matrix?
+(c) What difference in resistance is expected when moving from the low to the high level of x1?
+(d) Refit the model without x4 and examine the regression coefficients and standard errors? What stayed the the same as the original fit and what changed?
+(e) Explain how the change in the regression coefficients is related to the correlation matrix of X.
+
+<!-- -->
+
+8.  (∗) (Ejercicio 8 cap. 2 pág. 31) An experiment was conducted to examine factors that might affect the height of leaf springs in the suspension of trucks. The data may be found in truck. The five factors in the experiment are set to − and + but it will be more convenient for us to use −1 and +1. This can be achieved for the first factor by: truck$B <- sapply(truck$B, function(x) ifelse(x == "-",-1,1)) Repeat for the other four factors.
+
+<!-- -->
+
+(a) Fit a linear model for the height in terms of the five factors. Report on the value of the regression coefficients.
+(b) Fit a linear model using just factors B, C, D and E and report the coefficients. How do these com- pare to the previous question? Show how we could have anticipated this result by examining the X matrix.
+(c) Construct a new predictor called A which is set to B+C+D+E. Fit a linear model with the predictors A, B, C, D, E and O. Do coefficients for all six predictors appear in the regression summary? Explain.
+(d) Extract the model matrix X from the previous model. Attempt to compute β̂ from (X T X)−1 X T y. What went wrong and why?
+(e) Use the QR decomposition method as seen in Section 2.7 to compute β̂. Are the results satisfactory?
+(f) Use the function qr.coef to correctly compute β̂.
