@@ -1,0 +1,252 @@
+---
+title: 'Lesson 12: Multicollinearity & Other Regression Pitfalls'
+author: "bas, magí"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Uncorrelated predictors
+
+### Effect of perfectly uncorrelated predictor variables
+
+This exercise reviews the benefits of having perfectly uncorrelated predictor variables. The results of this exercise demonstrate a strong argument for conducting "*designed experiments*" in which the researcher sets the levels of the predictor variables in advance, as opposed to conducting an "*observational study*" in which the researcher merely observes the levels of the predictor variables as they happen. Unfortunately, many regression analyses are conducted on observational data rather than experimental data, limiting the strength of the conclusions that can be drawn from the data. As this exercise demonstrates, you should conduct an experiment, whenever possible, not an observational study. Use the (contrived) data stored in the [Uncorrelated Predictor data set](https://online.stat.psu.edu/onlinecourses/sites/stat501/files/data/uncorrelated.txt) to complete this lab exercise.
+
+1.  Using the Stat \>\> Basic Statistics \>\> Correlation\... command in Minitab, calculate the correlation coefficient between x1 and x2. Are the two variables perfectly uncorrelated?
+
+```{r}
+data <- data.frame(
+  x1 = c(-1, -1, -1, -1, -1, 0, 0, 0, 0, 1, 1, 1, 1, 1),
+  x2 = c(1, 2, 3, 4, 5, 7, 8, 9, 10, 1, 2, 3, 4, 5),
+  y = c(91, 107, 101, 121, 95, 84, 108, 102, 98, 73, 75, 102, 94, 113)
+)
+
+data
+```
+
+```{r}
+correlacion= cor(data$x1, data$x2)
+
+print(correlacion)
+```
+
+2.  **Fit the simple linear regression model with *y* as the response and as the single predictor:**
+
+```{r}
+model1= lm(y ~ x1, data= data)
+summary(model1)
+```
+
+-   **What is the value of the estimated slope coefficient b1?**
+
+    b1= -5.800
+
+-   **What is the regression sum of squares, SSR (x1), when x1 is the only predictor in the model?**
+
+    To calculate SSR(x1), we need to calculate the predicted values ŷi using the formula:
+
+    ŷi = b0 + b1 \* xi
+
+```{r}
+# Calculate mean of y (ȳ)
+y_mean= mean(data$y)
+
+# Calculate predicted values (ŷi)
+b0= 97.429
+b1= -5.800
+predicted= b0 + b1 * data$x1
+
+# Calculate SSR(x1)
+SSR_x1= sum((predicted - y_mean)^2)
+
+# Print SSR(x1)
+print(SSR_x1)
+```
+
+3.  **Now, fit the simple linear regression model with *y* as the response and x2 as the single predictor:**
+
+-   **What is the value of the estimated slope coefficient b2?**
+
+-   **What is the regression sum of squares, SSR (X2), when x2 is the only predictor in the model?**
+
+```{r}
+model2= lm(y ~ x2, data)
+summary(model2)
+```
+
+b2= 1.360
+
+```{r}
+# Calculate predicted values (ŷi)
+b0= 91.21
+b2= 1.36
+predicted= b0 + b2 * data$x2
+
+# Calculate SSR(x2)
+SSR_x2= sum((predicted - y_mean)^2)
+
+# Print SSR(x1)
+print(SSR_x2)
+```
+
+4.  **Now, fit the multiple linear regression model with *y* as the response and x1 as the first predictor and x2 as the second predictor:**
+
+-   **What is the value of the estimated slope coefficient b1? Is the estimate b1 different than that obtained when x1 was the only predictor in the model?**
+
+-   **What is the value of the estimated slope coefficient b2? Is the estimate different than that obtained when x2 was the only predictor in the model?**
+
+-   **What is the sequential sum of squares, SSR (x1\|x2)? Does the reduction in the error sum of squares when *x~2~* is added to the model depend on whether x1 is already in the model?**
+
+```{r}
+model3= lm(y ~ x1 + x2, data)
+summary(model3)
+```
+
+b1= -5.800; it's the same has model 1
+
+b2= 1.360: also it's the same
+
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\# SSE (Suma de Cuadrados del Error) se refiere a la suma de los cuadrados de los residuos en un modelo de regresión. Representa la cantidad total de variabilidad no explicada por el modelo y se calcula como la suma de los residuos al cuadrado.
+
+\# SSR (Suma de Cuadrados de la Regresión) se refiere a la suma de los cuadrados de las diferencias entre los valores ajustados por el modelo y la media de la variable dependiente. Representa la cantidad total de variabilidad explicada por el modelo y se calcula como la diferencia entre la suma total de cuadrados (SST) y la suma de cuadrados del error (SSE).
+
+\# SST (Sum of Squeares Total) = SSE + SSR
+
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+Para calcular SSR(x2\|x1), necesitamos comparar el SSE (Suma de Cuadrados del Error) del modelo que incluye solo x1 con el SSE del modelo completo que incluye tanto x1 como x2.
+
+```{r}
+# SSR(x2|x1)
+# Modelo con solo x1
+SSE_x1= sum(model1$residuals^2)
+
+# Modelo completo con x1 y x2
+SSE_x1_x2= sum(model3$residuals^2)
+
+# SSR(x2|x1)
+SSR_x2_given_x1= SSE_x1 - SSE_x1_x2
+SSR_x2_given_x1
+```
+
+SSR(x2\|x1) = 206.176 = SSR_x2, so this doesn't depend on whether x1 is already in the model.
+
+5.  **Now, fit the multiple linear regression model with *y* as the response and x2 as the first predictor, and x1 as the second predictor:**
+
+-   **What is the sequential sum of squares, SSR (x1\|x2)? Does the reduction in the error sum of squares when is added to the model depend on whether is already in the model?**
+
+```{r}
+model4= lm(y ~ x2 + x1, data)
+summary(model4)
+```
+
+```{r}
+# SSR(x1|x2)
+# Modelo con solo x1
+SSE_x2= sum(model2$residuals^2)
+
+# Modelo completo con x1 y x2
+SSE_x2_x1= sum(model4$residuals^2)
+
+# SSR(x2|x1)
+SSR_x1_given_x2= SSE_x2 - SSE_x2_x1
+SSR_x1_given_x2
+```
+
+SSR(x1\|x2) = 206.176 = SSR_x1, so this doesn't depend on whether x2 is already in the model.
+
+6.  **When the predictor variables are perfectly uncorrelated, is it possible to quantify the effect a predictor has on the response without regard to the other predictors?**
+
+Yes, when the predictor variables are perfectly uncorrelated, it is possible to quantify the effect of a predictor on the response without regard to the other predictors. In this case, the predictors are orthogonal to each other, meaning they do not share any linear relationship.
+
+When the predictors are orthogonal, the regression coefficients can be interpreted as the individual effects of each predictor on the response variable, holding all other predictors constant. The coefficient for a predictor represents the change in the response variable for a one-unit change in that predictor, assuming all other predictors remain constant.
+
+This is possible because when the predictors are uncorrelated, there is no shared variance or collinearity among them. Each predictor provides unique information and contributes independently to the prediction of the response variable.
+
+However, it's important to note that if the predictors are correlated or have a multicollinearity issue, the interpretation of the individual effects becomes more challenging. In such cases, the coefficients can be influenced by the presence of other predictors, and their individual effects may not be accurately estimated or interpreted without considering the other predictors.
+
+7.  **In what way does this exercise demonstrate the benefits of conducting a designed experiment rather than an observational study?**
+
+This exercise show us the efect of a predictor agains the response. Control over predictor variables: In a designed experiment, the researcher has control over the values of the predictor variables. This allows for systematic manipulation and control of the variables of interest. In contrast, in an observational study, the researcher does not have control over the predictor variables as they occur naturally. In this exercise, by manipulating the values of x1 and x2, the researcher can assess their individual effects on the response variable y.
+
+# Correlated predictors
+
+### Effects of correlated predictor variables
+
+**This exercise reviews the impacts of multicollinearity on various aspects of regression analyses. The Allen Cognitive Level (ACL) test is designed to quantify one's cognitive abilities. David and Riley (1990) investigated the relationship of the ACL test to the level of psychopathology in a set of 69 patients from a general hospital psychiatry unit. The [Allen Test data set](https://online.stat.psu.edu/onlinecourses/sites/stat501/files/data/allentest.txt "allentest.txt") contains the response *y* = ACL and three potential predictors:**
+
+-   **x1 = *Vocab*, scores on the vocabulary component of the Shipley Institute of Living Scale**
+
+-   **x2 = *Abstract*, scores on the abstraction component of the Shipley Institute of Living Scale**
+
+-   **x3 = *SDMT*, scores on the Symbol-Digit Modalities Test**
+
+1.  **Determine the pairwise correlations among the predictor variables to get an idea of the extent to which the predictor variables are (pairwise) correlated.**
+
+```{r}
+allen= read.csv('allentest.csv')
+allen= subset(allen, select = -X)
+head(allen)
+```
+
+```{r}
+# Creating a correlation matrix
+allen_correlation= cor(allen[c('Vocab' , 'Abstract', 'SDMT')])
+print(allen_correlation)
+```
+
+-   The correlation between "Vocab" and "Abstract" is 0.698, indicating a moderate positive correlation.
+
+-   The correlation between "Vocab" and "SDMT" is 0.556, indicating a moderate positive correlation.
+
+-   The correlation between "Abstract" and "SDMT" is 0.577, indicating a moderate positive correlation.
+
+We can see positive correlation between the predictor variables, but not very strong correlations.
+
+2.  **Fit the simple linear regression model with *y* = *ACL* as the response and = *Vocab* as the predictor. After fitting your model, request that Minitab predict the response *y* = *ACL* when x1 = 25.**
+
+    ```{r}
+    allen_model= lm(ACL ~ Vocab, allen)
+    summary(allen_model)
+    ```
+
+    ```{r}
+    # Predict the response y = ACL when x1 = 25
+    prediction_25= predict(allen_model, newdata= data.frame(Vocab = 25))
+    print(prediction_25)
+    ```
+
+    -   **What is the value of the estimated slope coefficient b1?**
+
+        b1 = 0.0298
+
+    -   **What is the value of the standard error of b1?**
+
+        SE(b1) = 0.0141
+
+    -   **What is the regression sum of squares, SSR (x1), when x1 is the only predictor in the model?**
+
+        ```{r}
+        # SSR = R² * SST
+        mean_y= mean(allen$ACL)
+        SST= sum((allen$ACL - mean_y)^2)
+        SSR_x1= 0.0625^2 * SST
+        print(SSR_x1)
+        ```
+
+    -   **What is the predicted response of *y* = *ACL* when x1 = 25?**
+
+```{r}
+# SSR = R² * SST
+mean_y= mean(allen$ACL)
+SST= sum((allen$ACL - mean_y)^2)
+SSR_x1= 0.0625^2 * SST
+print(SSR_x1)
+```
